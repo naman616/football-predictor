@@ -1,0 +1,86 @@
+/* Football Predictor — Global Styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Dark background */
+.main {
+    background-color: #0f1117;
+}
+
+/* Sidebar */
+div[data-testid="stSidebar"] {
+    background: #0d1117;
+    border-right: 1px solid #1a472a;
+}
+
+/* Metric containers */
+div[data-testid="metric-container"] {
+    background: #1c1e26;
+    border: 1px solid #2a2d3a;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+/* Buttons */
+div.stButton > button {
+    background: #1a472a;
+    color: #52b788;
+    border: 1px solid #2d6a4f;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+div.stButton > button:hover {
+    background: #2d6a4f;
+    color: #d8f3dc;
+    border-color: #52b788;
+}
+
+div.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #1a472a, #2d6a4f);
+    color: #d8f3dc;
+}
+
+/* Selectbox */
+div[data-testid="stSelectbox"] > div {
+    border-color: #2a2d3a;
+    background: #1c1e26;
+}
+
+/* DataFrames */
+div[data-testid="stDataFrame"] {
+    border: 1px solid #2a2d3a;
+    border-radius: 8px;
+}
+
+/* Expanders */
+div[data-testid="expander"] {
+    border: 1px solid #2a2d3a;
+    border-radius: 8px;
+    background: #1c1e26;
+}
+
+/* Tabs */
+button[data-baseweb="tab"] {
+    color: #aaa;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #52b788;
+    border-bottom: 2px solid #52b788;
+}
+
+/* Progress bars */
+div[data-testid="stProgress"] > div {
+    background: #52b788;
+}
+
+/* Info / success / warning boxes */
+div[data-testid="stAlert"] {
+    border-radius: 8px;
+}
