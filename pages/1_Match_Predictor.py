@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-st.set_page_config(page_title="Match Predictor · Football Predictor", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="Match Predictor · Football Predictor", layout="wide")
 
 st.markdown("""
 <style>
@@ -58,7 +58,7 @@ df, elo_df, elo_system, feature_engine, predictor = get_resources()
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown("# 🎯 Match Predictor")
+st.markdown("# Match Predictor")
 st.markdown("Predict the outcome of any international football match using our AI model.")
 
 if df is None:
@@ -80,11 +80,11 @@ default_home_idx = all_teams.index("Argentina") if "Argentina" in all_teams else
 default_away_idx = all_teams.index("France") if "France" in all_teams else 1
 
 with col1:
-    home_team = st.selectbox("🏠 Home Team", all_teams, index=default_home_idx)
+    home_team = st.selectbox("Home Team", all_teams, index=default_home_idx)
 with col_vs:
     st.markdown("<br><br><center><b style='color:#52b788;font-size:1.2rem'>VS</b></center>", unsafe_allow_html=True)
 with col2:
-    away_team = st.selectbox("✈️ Away Team", all_teams, index=default_away_idx)
+    away_team = st.selectbox("Away Team", all_teams, index=default_away_idx)
 
 col3, col4, col5 = st.columns(3)
 with col3:
@@ -97,7 +97,7 @@ with col4:
     neutral = st.checkbox("Neutral Venue", value=True)
 with col5:
     st.markdown("<br>", unsafe_allow_html=True)
-    predict_btn = st.button("🔮 Predict", type="primary", use_container_width=True)
+    predict_btn = st.button("Predict", type="primary", use_container_width=True)
 
 
 # ── Prediction ────────────────────────────────────────────────────────────────
@@ -216,15 +216,102 @@ if predict_btn or True:  # Always show prediction
         hc3.metric(f"{away_team} Wins", h2h["team2_wins"])
         hc4.metric("Total Meetings", h2h["total_matches"])
 
-        # Mini goal stats
-        st.markdown(
-            f"Goals: **{home_team}** {h2h['team1_goals']} — {h2h['team2_goals']} **{away_team}**"
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+
+        fig_h2h = make_subplots(
+            rows=1, cols=2,
+            subplot_titles=("Win/Draw/Loss Split", "Goals Scored"),
+            specs=[[{"type": "pie"}, {"type": "bar"}]],
         )
+        fig_h2h.add_trace(go.Pie(
+            labels=[f"{home_team} Wins", "Draws", f"{away_team} Wins"],
+            values=[h2h["team1_wins"], h2h["draws"], h2h["team2_wins"]],
+            marker_colors=["#2dc653", "#f0c040", "#e63946"],
+            hole=0.45,
+            textinfo="label+percent",
+            showlegend=False,
+        ), row=1, col=1)
+        fig_h2h.add_trace(go.Bar(
+            x=[home_team, away_team],
+            y=[h2h["team1_goals"], h2h["team2_goals"]],
+            marker_color=["#2dc653", "#e63946"],
+            text=[h2h["team1_goals"], h2h["team2_goals"]],
+            textposition="outside",
+            showlegend=False,
+        ), row=1, col=2)
+        fig_h2h.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0f1117",
+            plot_bgcolor="#0f1117",
+            height=280,
+            margin=dict(l=20, r=20, t=40, b=20),
+            font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+        )
+        fig_h2h.update_yaxes(gridcolor="#2a2d3a", row=1, col=2)
+        st.plotly_chart(fig_h2h, use_container_width=True, config={"displayModeBar": False})
     else:
         st.info("No recorded head-to-head meetings found in the dataset.")
 
+    # ── Form timelines ────────────────────────────────────────────────────────
+    st.markdown("<div class='section-header'>Recent Form Timeline</div>", unsafe_allow_html=True)
+    from src.utils.charts import form_timeline
+
+    ft_col1, ft_col2 = st.columns(2)
+    ranker_ft = TeamRanker(df, pd.DataFrame())
+
+    with ft_col1:
+        flag_h2 = get_flag_emoji(home_team)
+        st.markdown(f"**{flag_h2} {home_team}**")
+        form_h = ranker_ft.get_recent_form(home_team, n=10)
+        if form_h:
+            import plotly.graph_objects as go
+            color_map = {"W": "#2dc653", "D": "#f0c040", "L": "#e63946"}
+            fig_form_h = go.Figure()
+            for i, r in enumerate(form_h):
+                fig_form_h.add_trace(go.Bar(
+                    x=[i], y=[1],
+                    marker_color=color_map.get(r, "#888"),
+                    text=r, textposition="inside",
+                    showlegend=False,
+                    hovertemplate=f"Match {i+1}: {r}<extra></extra>",
+                ))
+            fig_form_h.update_layout(
+                template="plotly_dark", paper_bgcolor="#0f1117", plot_bgcolor="#0f1117",
+                height=100, margin=dict(l=0, r=0, t=0, b=0),
+                xaxis=dict(showticklabels=False, showgrid=False, zeroline=False),
+                yaxis=dict(showticklabels=False, showgrid=False, zeroline=False),
+                barmode="stack",
+            )
+            st.plotly_chart(fig_form_h, use_container_width=True, config={"displayModeBar": False})
+
+    with ft_col2:
+        flag_a2 = get_flag_emoji(away_team)
+        st.markdown(f"**{flag_a2} {away_team}**")
+        form_a = ranker_ft.get_recent_form(away_team, n=10)
+        if form_a:
+            import plotly.graph_objects as go
+            color_map = {"W": "#2dc653", "D": "#f0c040", "L": "#e63946"}
+            fig_form_a = go.Figure()
+            for i, r in enumerate(form_a):
+                fig_form_a.add_trace(go.Bar(
+                    x=[i], y=[1],
+                    marker_color=color_map.get(r, "#888"),
+                    text=r, textposition="inside",
+                    showlegend=False,
+                    hovertemplate=f"Match {i+1}: {r}<extra></extra>",
+                ))
+            fig_form_a.update_layout(
+                template="plotly_dark", paper_bgcolor="#0f1117", plot_bgcolor="#0f1117",
+                height=100, margin=dict(l=0, r=0, t=0, b=0),
+                xaxis=dict(showticklabels=False, showgrid=False, zeroline=False),
+                yaxis=dict(showticklabels=False, showgrid=False, zeroline=False),
+                barmode="stack",
+            )
+            st.plotly_chart(fig_form_a, use_container_width=True, config={"displayModeBar": False})
+
     # ── SHAP Explanation ──────────────────────────────────────────────────────
-    st.markdown("<div class='section-header'>🔍 Why This Prediction?</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Why This Prediction?</div>", unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["SHAP Feature Contributions", "Feature Importances"])
 

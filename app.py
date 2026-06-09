@@ -108,16 +108,16 @@ def initialize_app():
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## ⚽ Football Predictor")
+    st.markdown("## Football Predictor")
     st.markdown("---")
     st.markdown("**Navigation**")
-    st.page_link("app.py", label="🏠 Home", icon="🏠")
-    st.page_link("pages/1_Match_Predictor.py", label="Match Predictor", icon="🎯")
-    st.page_link("pages/2_Tournament_Simulator.py", label="Tournament Simulator", icon="🏆")
-    st.page_link("pages/3_Team_Rankings.py", label="Team Rankings", icon="📊")
-    st.page_link("pages/4_Player_Ratings.py", label="Player Ratings", icon="⭐")
-    st.page_link("pages/5_Player_Comparison.py", label="Player Comparison", icon="⚖️")
-    st.page_link("pages/6_About.py", label="About", icon="ℹ️")
+    st.page_link("app.py", label="Home")
+    st.page_link("pages/1_Match_Predictor.py", label="Match Predictor")
+    st.page_link("pages/2_Tournament_Simulator.py", label="Tournament Simulator")
+    st.page_link("pages/3_Team_Rankings.py", label="Team Rankings")
+    st.page_link("pages/4_Player_Ratings.py", label="Player Ratings")
+    st.page_link("pages/5_Player_Comparison.py", label="Player Comparison")
+    st.page_link("pages/6_About.py", label="About")
     st.markdown("---")
 
     # Data status
@@ -151,7 +151,7 @@ with st.sidebar:
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div style="padding: 30px 10px 20px;">
-    <div class="hero-title">Football Predictor ⚽</div>
+    <div class="hero-title">Football Predictor</div>
     <div class="hero-subtitle">
         AI-powered football analytics — match predictions, tournament simulations,
         team rankings, and player ratings built on 150 years of international football data.
@@ -187,31 +187,31 @@ st.markdown("<div class='section-header'>Platform Features</div>", unsafe_allow_
 # Feature cards
 cols = st.columns(3)
 features = [
-    ("🎯", "Match Predictor",
+    ("Match Predictor",
      "Predict match outcomes using an XGBoost + LightGBM ensemble trained on 20+ years "
      "of international data. Features include Elo ratings, recent form, H2H records, "
      "and tournament level."),
-    ("🏆", "Tournament Simulator",
+    ("Tournament Simulator",
      "Run 10,000 Monte Carlo simulations for World Cup, Euro, Copa América, and more. "
      "Get champion, final, semi-final, and group-stage probabilities for every team."),
-    ("📊", "Team Power Rankings",
+    ("Team Power Rankings",
      "Multi-dimensional ranking beyond FIFA. Combines Elo, recent form, attack and "
      "defense metrics, and major tournament performance into a composite power score."),
-    ("⭐", "Player Ratings",
+    ("Player Ratings",
      "Position-specific ratings derived from per-90 statistics across Europe's top "
      "leagues and international competitions. Covers forwards, midfielders, defenders, "
      "and goalkeepers."),
-    ("⚖️", "Player Comparison",
+    ("Player Comparison",
      "Compare any two players side-by-side with radar charts, percentile rankings, "
      "statistical breakdowns, and analytical insights."),
-    ("🔍", "Explainable AI",
+    ("Explainable AI",
      "Every prediction comes with SHAP-powered explanations showing exactly which "
      "factors drove the model's decision — from Elo differences to head-to-head records."),
 ]
-for i, (icon, title, desc) in enumerate(features):
+for i, (title, desc) in enumerate(features):
     with cols[i % 3]:
         st.markdown(
-            f'<div class="feature-card"><h4>{icon} {title}</h4><p>{desc}</p></div>',
+            f'<div class="feature-card"><h4>{title}</h4><p>{desc}</p></div>',
             unsafe_allow_html=True,
         )
 
@@ -222,21 +222,77 @@ if rankings is not None and not rankings.empty:
     top10 = rankings.head(10).copy()
 
     from src.utils.helpers import get_flag_emoji
-    cols = st.columns([0.5, 3, 2, 1.5, 1.5, 1.5, 1.5])
-    headers = ["#", "Team", "Confederation", "Power", "Attack", "Defense", "Form"]
-    for col, h in zip(cols, headers):
-        col.markdown(f"**{h}**")
+    import plotly.graph_objects as go
 
-    for _, row in top10.iterrows():
-        c1, c2, c3, c4, c5, c6, c7 = st.columns([0.5, 3, 2, 1.5, 1.5, 1.5, 1.5])
-        flag = get_flag_emoji(row["team"])
-        c1.write(f"**{int(row['rank'])}**")
-        c2.write(f"{flag} {row['team']}")
-        c3.write(row.get("confederation", "—"))
-        c4.write(f"**{row['power_rating']:.1f}**")
-        c5.write(f"{row.get('attack_rating', 0):.1f}")
-        c6.write(f"{row.get('defense_rating', 0):.1f}")
-        c7.write(f"{row.get('form_rating', 0):.1f}")
+    team_labels = [f"{get_flag_emoji(t)} {t}" for t in top10["team"]]
+
+    fig_top10 = go.Figure()
+    fig_top10.add_trace(go.Bar(
+        name="Power Rating",
+        x=team_labels,
+        y=top10["power_rating"],
+        marker_color="#52b788",
+        text=[f"{v:.1f}" for v in top10["power_rating"]],
+        textposition="outside",
+    ))
+    fig_top10.add_trace(go.Bar(
+        name="Attack",
+        x=team_labels,
+        y=top10.get("attack_rating", top10["power_rating"] * 0),
+        marker_color="#f0c040",
+        text=[f"{v:.1f}" for v in top10.get("attack_rating", top10["power_rating"] * 0)],
+        textposition="outside",
+    ))
+    fig_top10.add_trace(go.Bar(
+        name="Defense",
+        x=team_labels,
+        y=top10.get("defense_rating", top10["power_rating"] * 0),
+        marker_color="#457b9d",
+        text=[f"{v:.1f}" for v in top10.get("defense_rating", top10["power_rating"] * 0)],
+        textposition="outside",
+    ))
+    fig_top10.update_layout(
+        barmode="group",
+        template="plotly_dark",
+        paper_bgcolor="#0f1117",
+        plot_bgcolor="#0f1117",
+        height=380,
+        margin=dict(l=20, r=20, t=20, b=60),
+        font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+        xaxis=dict(tickangle=-25, gridcolor="#2a2d3a"),
+        yaxis=dict(gridcolor="#2a2d3a", title="Rating"),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.35, x=0.3),
+    )
+    st.plotly_chart(fig_top10, use_container_width=True, config={"displayModeBar": False})
+
+    # Confederation breakdown pie chart
+    if "confederation" in rankings.columns:
+        import plotly.express as px
+        CONF_COLORS = {
+            "UEFA": "#3a86ff", "CONMEBOL": "#ffbe0b", "CONCACAF": "#fb5607",
+            "CAF": "#8338ec", "AFC": "#06d6a0", "OFC": "#ef233c", "Other": "#adb5bd",
+        }
+        conf_counts = rankings["confederation"].value_counts().reset_index()
+        conf_counts.columns = ["confederation", "teams"]
+        fig_conf_pie = px.pie(
+            conf_counts,
+            names="confederation",
+            values="teams",
+            color="confederation",
+            color_discrete_map=CONF_COLORS,
+            hole=0.45,
+            template="plotly_dark",
+        )
+        fig_conf_pie.update_layout(
+            paper_bgcolor="#0f1117",
+            height=300,
+            margin=dict(l=20, r=20, t=20, b=20),
+            font=dict(family="Inter, sans-serif"),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2),
+            title=dict(text="Teams by Confederation", font_size=13, font_color="#52b788"),
+        )
+        fig_conf_pie.update_traces(textinfo="label+percent", textfont_size=11)
+        st.plotly_chart(fig_conf_pie, use_container_width=True, config={"displayModeBar": False})
 
 
 # ── Top Players Snapshot ──────────────────────────────────────────────────────
@@ -245,7 +301,7 @@ if players is not None and not players.empty:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("**🥇 Overall Top 5**")
+        st.markdown("**Overall Top 5**")
         top5 = players.head(5)
         for _, p in top5.iterrows():
             from src.utils.helpers import rating_badge
@@ -258,7 +314,7 @@ if players is not None and not players.empty:
             )
 
     with col2:
-        st.markdown("**⚡ Top Forwards**")
+        st.markdown("**Top Forwards**")
         fw = players[players["position"] == "FW"].head(5)
         for _, p in fw.iterrows():
             from src.utils.helpers import rating_badge
@@ -271,7 +327,7 @@ if players is not None and not players.empty:
 
 
 # ── Methodology ───────────────────────────────────────────────────────────────
-with st.expander("📐 Methodology Overview", expanded=False):
+with st.expander("Methodology Overview", expanded=False):
     st.markdown("""
 ### Match Prediction
 - **Elo Rating System** — Custom world football Elo with K-factor varying by tournament importance

@@ -9,7 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
-st.set_page_config(page_title="Tournament Simulator · Football Predictor", page_icon="🏆", layout="wide")
+st.set_page_config(page_title="Tournament Simulator · Football Predictor", layout="wide")
 
 st.markdown("""
 <style>
@@ -122,7 +122,7 @@ def make_batch_predict_fn(elo_sys, pred, feat_eng):
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown("# 🏆 Tournament Simulator")
+st.markdown("# Tournament Simulator")
 st.markdown("Run Monte Carlo simulations to estimate each team's probability of winning the tournament.")
 
 if df is None:
@@ -147,14 +147,14 @@ with col2:
     )
 with col3:
     st.markdown("<br>", unsafe_allow_html=True)
-    run_btn = st.button("▶️ Run Simulation", type="primary", use_container_width=True)
+    run_btn = st.button("Run Simulation", type="primary", use_container_width=True)
 
 
 # ── Show tournament participants ──────────────────────────────────────────────
 tournament_config = TOURNAMENTS[tournament_name]
 groups = tournament_config["groups"]
 
-with st.expander(f"📋 {tournament_name} — Group Stage Draw", expanded=False):
+with st.expander(f"{tournament_name} — Group Stage Draw", expanded=False):
     from src.utils.helpers import get_flag_emoji
     n_groups = len(groups)
     cols_per_row = min(4, n_groups)
@@ -189,12 +189,12 @@ if run_btn:
 
     def precompute_callback():
         progress_bar.progress(0.0)
-        status_text.text(f"⚙️ Pre-computing {n_pairs:,} match probabilities for {n_teams} teams...")
+        status_text.text(f"Pre-computing {n_pairs:,} match probabilities for {n_teams} teams...")
 
     def progress_callback(done: int, total: int):
         pct = min(done / total, 1.0)
         progress_bar.progress(pct)
-        status_text.text(f"🎲 Simulating... {done:,}/{total:,} ({pct*100:.0f}%)")
+        status_text.text(f"Simulating... {done:,}/{total:,} ({pct*100:.0f}%)")
 
     with st.spinner(f"Running {n_sims:,} simulations..."):
         results = sim.simulate(
@@ -206,7 +206,7 @@ if run_btn:
         )
 
     progress_bar.progress(1.0)
-    status_text.text(f"✅ {n_sims:,} simulations complete!")
+    status_text.text(f"{n_sims:,} simulations complete!")
 
     st.session_state["sim_results"] = results
     st.session_state["sim_tournament"] = tournament_name
@@ -219,7 +219,7 @@ if "sim_results" in st.session_state:
     st.markdown("---")
 
     # ── Champion probabilities ────────────────────────────────────────────────
-    st.markdown("<div class='section-header'>🥇 Championship Probabilities</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Championship Probabilities</div>", unsafe_allow_html=True)
 
     # Top 5 champion candidates
     champ_col = "p_champion"
@@ -366,14 +366,14 @@ if "sim_results" in st.session_state:
                         st.markdown(
                             f"{flag} {row['team']}: "
                             f"<span style='color:#52b788'>R16 {r16:.0f}%</span> | "
-                            f"<span style='color:#f0c040'>🏆 {champ:.1f}%</span>",
+                            f"<span style='color:#f0c040'>{champ:.1f}%</span>",
                             unsafe_allow_html=True,
                         )
 
     # ── Download ──────────────────────────────────────────────────────────────
     csv = results_display.to_csv(index=False)
     st.download_button(
-        label="⬇️ Download Results CSV",
+        label="Download Results CSV",
         data=csv,
         file_name=f"{t_name.replace(' ', '_')}_simulation.csv",
         mime="text/csv",
@@ -389,7 +389,7 @@ else:
 
     # Show Elo-based quick preview
     if elo_system:
-        st.markdown("<div class='section-header'>Pre-Tournament Elo Ratings (Current)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>Pre-Tournament Elo Ratings</div>", unsafe_allow_html=True)
         t_config = TOURNAMENTS[tournament_name]
         rows = []
         for grp, teams in t_config["groups"].items():
@@ -400,11 +400,34 @@ else:
                     "elo": elo_system.get_rating(team),
                 })
         elo_preview = pd.DataFrame(rows).sort_values("elo", ascending=False)
-        st.dataframe(
-            elo_preview,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "elo": st.column_config.ProgressColumn("Elo Rating", min_value=1200, max_value=2200, format="%.0f"),
-            },
+
+        # Bar chart of Elo ratings coloured by group
+        import plotly.express as px
+        group_palette = px.colors.qualitative.Set2
+        group_list = sorted(elo_preview["group"].unique())
+        color_map = {g: group_palette[i % len(group_palette)] for i, g in enumerate(group_list)}
+        elo_preview["color"] = elo_preview["group"].map(color_map)
+        elo_sorted = elo_preview.sort_values("elo", ascending=True)
+        team_labels_elo = [f"{get_flag_emoji(t)} {t}" for t in elo_sorted["team"]]
+
+        fig_elo_prev = go.Figure(go.Bar(
+            x=elo_sorted["elo"],
+            y=team_labels_elo,
+            orientation="h",
+            marker_color=elo_sorted["color"],
+            text=[f"{v:.0f}" for v in elo_sorted["elo"]],
+            textposition="outside",
+            customdata=elo_sorted["group"],
+            hovertemplate="<b>%{y}</b><br>Elo: %{x:.0f}<br>Group: %{customdata}<extra></extra>",
+        ))
+        fig_elo_prev.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="#0f1117",
+            plot_bgcolor="#0f1117",
+            height=max(400, 26 * len(elo_sorted)),
+            margin=dict(l=20, r=60, t=20, b=20),
+            xaxis=dict(title="Elo Rating", gridcolor="#2a2d3a"),
+            yaxis=dict(gridcolor="#2a2d3a"),
+            font=dict(family="Inter, sans-serif", color="#e0e0e0"),
         )
+        st.plotly_chart(fig_elo_prev, use_container_width=True, config={"displayModeBar": False})

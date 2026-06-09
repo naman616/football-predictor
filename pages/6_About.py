@@ -5,7 +5,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
 
-st.set_page_config(page_title="About · Football Predictor", page_icon="ℹ️", layout="wide")
+st.set_page_config(page_title="About · Football Predictor", layout="wide")
 
 st.markdown("""
 <style>
@@ -31,7 +31,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("# ℹ️ About Football Predictor")
+st.markdown("# About Football Predictor")
 st.markdown("A production-quality football analytics platform built on 150+ years of international match data.")
 
 st.markdown("<div class='section-header'>Project Overview</div>", unsafe_allow_html=True)
@@ -86,7 +86,7 @@ col_t1, col_t2, col_t3 = st.columns(3)
 with col_t1:
     st.markdown("""
     <div class="tech-card">
-        <h4>🤖 ML Models</h4>
+        <h4>ML Models</h4>
         <p><b>XGBoost</b> (45%) — Gradient boosted trees, 400 estimators, max_depth=5<br><br>
         <b>LightGBM</b> (40%) — Light gradient boosting, fast inference<br><br>
         <b>Logistic Regression</b> (15%) — Regularized multinomial, calibrated probabilities</p>
@@ -96,7 +96,7 @@ with col_t1:
 with col_t2:
     st.markdown("""
     <div class="tech-card">
-        <h4>📊 Elo System</h4>
+        <h4>Elo System</h4>
         <p>Custom world football Elo with:<br><br>
         • Tournament K-factors (WC=60, Friendly=20)<br>
         • Goal-difference multiplier<br>
@@ -108,7 +108,7 @@ with col_t2:
 with col_t3:
     st.markdown("""
     <div class="tech-card">
-        <h4>🎲 Tournament Simulator</h4>
+        <h4>Tournament Simulator</h4>
         <p>Monte Carlo simulation:<br><br>
         • Up to 20,000 iterations per tournament<br>
         • Poisson-distributed scorelines<br>
@@ -211,6 +211,61 @@ with st.expander("Rating weights by position", expanded=False):
 """)
 
 
+st.markdown("<div class='section-header'>Model Architecture</div>", unsafe_allow_html=True)
+
+import plotly.graph_objects as go
+
+arch_col1, arch_col2 = st.columns(2)
+
+with arch_col1:
+    fig_weights = go.Figure(go.Pie(
+        labels=["XGBoost", "LightGBM", "Logistic Regression"],
+        values=[45, 40, 15],
+        marker_colors=["#52b788", "#f0c040", "#457b9d"],
+        hole=0.45,
+        textinfo="label+percent",
+        textfont_size=12,
+    ))
+    fig_weights.update_layout(
+        title=dict(text="Ensemble Model Weights", font_size=13, font_color="#52b788"),
+        paper_bgcolor="#0f1117",
+        height=280,
+        margin=dict(l=20, r=20, t=40, b=20),
+        font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+        showlegend=False,
+    )
+    st.plotly_chart(fig_weights, use_container_width=True, config={"displayModeBar": False})
+
+with arch_col2:
+    ranking_weights = {
+        "Elo Rating": 35,
+        "Attack Metrics": 20,
+        "Defense Metrics": 20,
+        "Recent Form": 15,
+        "Tournament Perf.": 10,
+    }
+    fig_rank_w = go.Figure(go.Bar(
+        x=list(ranking_weights.values()),
+        y=list(ranking_weights.keys()),
+        orientation="h",
+        marker_color=["#52b788", "#f0c040", "#457b9d", "#2dc653", "#e63946"],
+        text=[f"{v}%" for v in ranking_weights.values()],
+        textposition="outside",
+    ))
+    fig_rank_w.update_layout(
+        title=dict(text="Team Ranking Component Weights", font_size=13, font_color="#52b788"),
+        template="plotly_dark",
+        paper_bgcolor="#0f1117",
+        plot_bgcolor="#0f1117",
+        height=280,
+        margin=dict(l=20, r=50, t=40, b=20),
+        font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+        xaxis=dict(range=[0, 45], gridcolor="#2a2d3a", title="Weight (%)"),
+        yaxis=dict(gridcolor="#2a2d3a"),
+        showlegend=False,
+    )
+    st.plotly_chart(fig_rank_w, use_container_width=True, config={"displayModeBar": False})
+
 st.markdown("<div class='section-header'>Performance Metrics</div>", unsafe_allow_html=True)
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
@@ -255,7 +310,7 @@ st.markdown("---")
 st.markdown("""
 <center>
 <small style='color:#555'>
-Football Predictor · Built with ❤️ for the football analytics community ·
+Football Predictor · Built for the football analytics community ·
 Data: Martj42 International Results (1872–2024) ·
 Hosted on Hugging Face Spaces
 </small>

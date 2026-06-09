@@ -9,7 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
-st.set_page_config(page_title="Player Ratings · Football Predictor", page_icon="⭐", layout="wide")
+st.set_page_config(page_title="Player Ratings · Football Predictor", layout="wide")
 
 st.markdown("""
 <style>
@@ -59,7 +59,7 @@ def get_resources():
 players, rater = get_resources()
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown("# ⭐ Player Ratings")
+st.markdown("# Player Ratings")
 st.markdown("Position-specific ratings based on per-90 statistics across Europe's top leagues and international competitions.")
 
 if players is None or players.empty:
@@ -109,6 +109,36 @@ with tab1:
 
     from src.utils.helpers import get_flag_emoji
 
+    # Overall rating distribution by position
+    pos_order = ["FW", "MF", "DF", "GK"]
+    pos_colors = {"FW": "#f0c040", "MF": "#52b788", "DF": "#457b9d", "GK": "#e63946"}
+    fig_dist = go.Figure()
+    for pos in pos_order:
+        pos_data = players[players["position"] == pos]["overall_rating"].dropna()
+        if not pos_data.empty:
+            fig_dist.add_trace(go.Box(
+                y=pos_data,
+                name=pos,
+                marker_color=pos_colors.get(pos, "#52b788"),
+                boxmean="sd",
+                jitter=0.3,
+                pointpos=-1.8,
+                boxpoints="outliers",
+            ))
+    fig_dist.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="#0f1117",
+        plot_bgcolor="#0f1117",
+        height=320,
+        margin=dict(l=20, r=20, t=30, b=30),
+        font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+        yaxis=dict(title="Overall Rating", gridcolor="#2a2d3a"),
+        xaxis=dict(title="Position", gridcolor="#2a2d3a"),
+        title=dict(text="Rating Distribution by Position", font_size=13, font_color="#52b788"),
+        showlegend=False,
+    )
+    st.plotly_chart(fig_dist, use_container_width=True, config={"displayModeBar": False})
+
     display_cols = ["global_rank", "name", "nationality", "position", "club",
                     "overall_rating", "attack_rating", "defense_rating"]
     if "league" in filtered.columns:
@@ -146,23 +176,23 @@ with tab1:
     )
 
     # Download
-    st.download_button("⬇️ Download CSV", filtered.to_csv(index=False), "player_ratings.csv", "text/csv")
+    st.download_button("Download CSV", filtered.to_csv(index=False), "player_ratings.csv", "text/csv")
 
 
 with tab2:
     st.markdown("<div class='section-header'>Top 5 by Position</div>", unsafe_allow_html=True)
 
-    for pos, pos_label, icon in [
-        ("FW", "Forwards", "⚡"),
-        ("MF", "Midfielders", "🔄"),
-        ("DF", "Defenders", "🛡️"),
-        ("GK", "Goalkeepers", "🧤"),
+    for pos, pos_label in [
+        ("FW", "Forwards"),
+        ("MF", "Midfielders"),
+        ("DF", "Defenders"),
+        ("GK", "Goalkeepers"),
     ]:
         pos_players = players[players["position"] == pos].head(5)
         if pos_players.empty:
             continue
 
-        st.markdown(f"**{icon} Top {pos_label}**")
+        st.markdown(f"**Top {pos_label}**")
         cols = st.columns(len(pos_players))
         for col, (_, p) in zip(cols, pos_players.iterrows()):
             with col:

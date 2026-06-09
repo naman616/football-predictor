@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-st.set_page_config(page_title="Team Rankings · Football Predictor", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Team Rankings · Football Predictor", layout="wide")
 
 st.markdown("""
 <style>
@@ -44,7 +44,7 @@ df, elo_df, rankings, elo_system = get_resources()
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown("# 📊 Team Power Rankings")
+st.markdown("# Team Power Rankings")
 st.markdown("Multi-dimensional team ranking combining Elo ratings, recent form, attack, defense, and tournament performance.")
 
 if df is None:
@@ -94,6 +94,54 @@ with tab1:
     st.markdown("<div class='section-header'>Power Rankings Table</div>", unsafe_allow_html=True)
 
     from src.utils.helpers import get_flag_emoji
+    import plotly.graph_objects as go
+
+    # Top 15 leaderboard bar chart
+    top15 = filtered.head(15).copy()
+    team_labels_r = [f"{get_flag_emoji(t)} {t}" for t in top15["team"]]
+    fig_rank_bar = go.Figure()
+    fig_rank_bar.add_trace(go.Bar(
+        name="Power",
+        y=team_labels_r[::-1],
+        x=top15["power_rating"].iloc[::-1],
+        orientation="h",
+        marker_color="#52b788",
+        text=[f"{v:.1f}" for v in top15["power_rating"].iloc[::-1]],
+        textposition="outside",
+    ))
+    if "attack_rating" in top15.columns:
+        fig_rank_bar.add_trace(go.Bar(
+            name="Attack",
+            y=team_labels_r[::-1],
+            x=top15["attack_rating"].iloc[::-1],
+            orientation="h",
+            marker_color="#f0c040",
+            text=[f"{v:.1f}" for v in top15["attack_rating"].iloc[::-1]],
+            textposition="outside",
+        ))
+    if "defense_rating" in top15.columns:
+        fig_rank_bar.add_trace(go.Bar(
+            name="Defense",
+            y=team_labels_r[::-1],
+            x=top15["defense_rating"].iloc[::-1],
+            orientation="h",
+            marker_color="#457b9d",
+            text=[f"{v:.1f}" for v in top15["defense_rating"].iloc[::-1]],
+            textposition="outside",
+        ))
+    fig_rank_bar.update_layout(
+        barmode="group",
+        template="plotly_dark",
+        paper_bgcolor="#0f1117",
+        plot_bgcolor="#0f1117",
+        height=500,
+        margin=dict(l=20, r=70, t=20, b=20),
+        font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+        xaxis=dict(gridcolor="#2a2d3a", title="Rating"),
+        yaxis=dict(gridcolor="#2a2d3a"),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.12, x=0.3),
+    )
+    st.plotly_chart(fig_rank_bar, use_container_width=True, config={"displayModeBar": False})
 
     # Display as formatted table
     display_cols = ["rank", "team", "confederation", "power_rating", "elo",
@@ -131,7 +179,7 @@ with tab1:
 
     # Download
     csv = filtered.to_csv(index=False)
-    st.download_button("⬇️ Download Rankings CSV", csv, "team_rankings.csv", "text/csv")
+    st.download_button("Download Rankings CSV", csv, "team_rankings.csv", "text/csv")
 
 
 with tab2:

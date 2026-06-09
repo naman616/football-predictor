@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Player Comparison · Football Predictor", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Player Comparison · Football Predictor", layout="wide")
 
 st.markdown("""
 <style>
@@ -55,7 +55,7 @@ players, rater = get_resources()
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.markdown("# ⚖️ Player Comparison")
+st.markdown("# Player Comparison")
 st.markdown("Compare any two players with radar charts, statistics, and percentile rankings.")
 
 if players is None or players.empty:
@@ -346,6 +346,49 @@ with tab3:
 
 with tab4:
     st.markdown("<div class='section-header'>Analytical Insights</div>", unsafe_allow_html=True)
+
+    # Rating summary bar chart
+    rating_cats = ["Overall", "Attack", "Defense"]
+    p1_ratings = [
+        float(p1.get("overall_rating", 0) or 0),
+        float(p1.get("attack_rating", 0) or 0),
+        float(p1.get("defense_rating", 0) or 0),
+    ]
+    p2_ratings = [
+        float(p2.get("overall_rating", 0) or 0),
+        float(p2.get("attack_rating", 0) or 0),
+        float(p2.get("defense_rating", 0) or 0),
+    ]
+    fig_rating_cmp = go.Figure()
+    fig_rating_cmp.add_trace(go.Bar(
+        name=player1_name,
+        x=rating_cats,
+        y=p1_ratings,
+        marker_color="#52b788",
+        text=[f"{v:.1f}" for v in p1_ratings],
+        textposition="outside",
+    ))
+    fig_rating_cmp.add_trace(go.Bar(
+        name=player2_name,
+        x=rating_cats,
+        y=p2_ratings,
+        marker_color="#f0c040",
+        text=[f"{v:.1f}" for v in p2_ratings],
+        textposition="outside",
+    ))
+    fig_rating_cmp.update_layout(
+        barmode="group",
+        template="plotly_dark",
+        paper_bgcolor="#0f1117",
+        plot_bgcolor="#0f1117",
+        height=300,
+        margin=dict(l=20, r=20, t=20, b=60),
+        font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+        yaxis=dict(range=[0, 110], gridcolor="#2a2d3a", title="Rating"),
+        xaxis=dict(gridcolor="#2a2d3a"),
+        legend=dict(orientation="h", yanchor="bottom", y=-0.3, x=0.3),
+    )
+    st.plotly_chart(fig_rating_cmp, use_container_width=True, config={"displayModeBar": False})
 
     # Auto-generate comparison insights
     insights = []
